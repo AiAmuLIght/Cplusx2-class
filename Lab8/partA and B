@@ -1,0 +1,395 @@
+#include <iostream>
+using namespace std;
+
+class RationalNumber {
+private:
+    int num; 
+    int den;
+
+    // Compute gcd 
+    int gcd(int a, int b) const {
+        if (a < 0) a = -a;
+        if (b < 0) b = -b;
+        while (b != 0) {
+            int t = a % b;
+            a = b;
+            b = t;
+        }
+        return a == 0 ? 1 : a;
+    }
+
+    // Reduce and correct signs
+    void normalize() {
+        if (den == 0) {
+            cout << "Error: the denominators cannot be '0'. it will be Set to 1!\n";
+            den = 1;
+        }
+
+        if (den < 0) {  
+            den = -den;
+            num = -num;
+        }
+
+        int g = gcd(num, den);
+        num /= g;
+        den /= g;
+    }
+
+public:
+    RationalNumber(int n = 0, int d = 1) {
+        num = n;
+        den = d;
+        normalize();
+    }
+
+    // -------- Arithmetic operators --------
+    RationalNumber operator+(const RationalNumber& r) const {
+        return RationalNumber(num * r.den + r.num * den, den * r.den);
+    }
+
+    RationalNumber operator-(const RationalNumber& r) const {
+        return RationalNumber(num * r.den - r.num * den, den * r.den);
+    }
+
+    RationalNumber operator*(const RationalNumber& r) const {
+        return RationalNumber(num * r.num, den * r.den);
+    }
+
+    RationalNumber operator/(const RationalNumber& r) const {
+        return RationalNumber(num * r.den, den * r.num);
+    }
+
+
+    // -------- Relational / equality operators --------
+    bool operator==(const RationalNumber& r) const {
+        return num == r.num && den == r.den;
+    }
+
+    bool operator!=(const RationalNumber& r) const {
+        return !(*this == r);
+    }
+
+    bool operator<(const RationalNumber& r) const {
+        return num * r.den < r.num * den;
+    }
+
+    bool operator>(const RationalNumber& r) const {
+        return r < *this;
+    }
+
+    bool operator<=(const RationalNumber& r) const {
+        return !(*this > r);
+    }
+
+    bool operator>=(const RationalNumber& r) const {
+        return !(*this < r);
+    }
+
+
+    // -------- To display --------
+    void print() const {
+        cout << num << "/" << den;
+    }
+};
+
+
+int main() {
+    RationalNumber a(1, 2);     
+    RationalNumber b(3, 4);     
+
+    cout << "a = "; a.print(); cout << endl;
+    cout << "b = "; b.print(); cout << endl;
+
+    RationalNumber sum = a + b;
+    RationalNumber diff = a - b;
+    RationalNumber prod = a * b;
+    RationalNumber quot = a / b;
+
+    cout << "a + b = "; sum.print(); cout << endl;
+    cout << "a - b = "; diff.print(); cout << endl;
+    cout << "a * b = "; prod.print(); cout << endl;
+    cout << "a / b = "; quot.print(); cout << endl;
+
+    
+    cout << boolalpha;
+    cout << "a == b ? " << (a == b) << endl;
+    cout << "a != b ? " << (a != b) << endl;
+    cout << "a < b ?  " << (a < b) << endl;
+    cout << "a > b ?  " << (a > b) << endl;
+
+    return 0;
+}
+
+
+
+#include <iostream>
+using namespace std;
+
+class Polynomial {
+private:
+    struct Term {
+        int coef; 
+        int exp;  
+    };
+
+    static const int MAX = 20;  
+    Term terms[MAX];
+    int  n; 
+
+    void clean() {
+        for (int i = 0; i < n; ++i) {
+            if (terms[i].coef == 0) continue;
+            for (int j = i + 1; j < n; ++j) {
+                if (terms[j].coef != 0 && terms[i].exp == terms[j].exp) {
+                    terms[i].coef += terms[j].coef;
+                    terms[j].coef = 0;
+                }
+            }
+        }
+
+        int k = 0;
+        for (int i = 0; i < n; ++i) {
+            if (terms[i].coef != 0) {
+                terms[k] = terms[i];
+                ++k;
+            }
+        }
+        n = k;
+
+        for (int i = 0; i < n; ++i) {
+            for (int j = i + 1; j < n; ++j) {
+                if (terms[j].exp > terms[i].exp) {
+                    Term temp = terms[i];
+                    terms[i] = terms[j];
+                    terms[j] = temp;
+                }
+            }
+        }
+    }
+
+    void addTermInternal(int coef, int exp) {
+        if (coef == 0) return;
+
+        for (int i = 0; i < n; ++i) {
+            if (terms[i].exp == exp) {
+                terms[i].coef += coef;
+                clean();
+                return;
+            }
+        }
+
+       if (n < MAX) {
+            terms[n].coef = coef;
+            terms[n].exp  = exp;
+            ++n;
+            clean();
+        } else {
+            cout << "attention! the maximum number of terms is reached. your new term  has been ignored.\n";
+        }
+    }
+
+public:
+    Polynomial() {
+        n = 0;
+    }
+
+    Polynomial(int coef, int exp) {
+        n = 0;
+        setTerm(coef, exp);
+    }
+
+    Polynomial(const Polynomial& other) {
+        n = other.n;
+        for (int i = 0; i < n; ++i) {
+            terms[i] = other.terms[i];
+        }
+    }
+
+    ~Polynomial() {
+        // there is nothing to delet or add in my code, like there is no dynamic memory so I didn.t know what to do with this part  
+    }
+
+    void setTerm(int coef, int exp) {
+        addTermInternal(coef, exp);
+    }
+
+    int getCoefficient(int exp) const {
+        for (int i = 0; i < n; ++i) {
+            if (terms[i].exp == exp) {
+                return terms[i].coef;
+            }
+        }
+        return 0;
+    }
+
+    int getTermCount() const {
+        return n;
+    }
+
+    // -------- assign operator --------
+    Polynomial& operator=(const Polynomial& other) {
+        if (this != &other) {
+            n = other.n;
+            for (int i = 0; i < n; ++i) {
+                terms[i] = other.terms[i];
+            }
+        }
+        return *this;
+    }
+
+    // -------- arithmetic operators --------
+
+    // addition
+    Polynomial operator+(const Polynomial& p) const {
+        Polynomial result;
+
+        for (int i = 0; i < n; ++i) {
+            result.addTermInternal(terms[i].coef, terms[i].exp);
+        }
+        for (int i = 0; i < p.n; ++i) {
+            result.addTermInternal(p.terms[i].coef, p.terms[i].exp);
+        }
+        return result;
+    }
+
+    // subtraction
+    Polynomial operator-(const Polynomial& p) const {
+        Polynomial result;
+
+        for (int i = 0; i < n; ++i) {
+            result.addTermInternal(terms[i].coef, terms[i].exp);
+        }
+        for (int i = 0; i < p.n; ++i) {
+            result.addTermInternal(-p.terms[i].coef, p.terms[i].exp);
+        }
+        return result;
+    }
+
+    // multiplication
+    Polynomial operator*(const Polynomial& p) const {
+        Polynomial result;
+
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < p.n; ++j) {
+                int newCoef = terms[i].coef * p.terms[j].coef;
+                int newExp  = terms[i].exp  + p.terms[j].exp;
+                result.addTermInternal(newCoef, newExp);
+            }
+        }
+        return result;
+    }
+
+    // -------- assign compond operators --------
+    Polynomial& operator+=(const Polynomial& p) {
+        *this = *this + p;
+        return *this;
+    }
+
+    Polynomial& operator-=(const Polynomial& p) {
+        *this = *this - p;
+        return *this;
+    }
+
+    Polynomial& operator*=(const Polynomial& p) {
+        *this = *this * p;
+        return *this;
+    }
+
+    // -------- To display --------
+    void print() const {
+        if (n == 0) {
+            cout << 0;
+            return;
+        }
+
+        for (int i = 0; i < n; ++i) {
+            int c = terms[i].coef;
+            int e = terms[i].exp;
+
+            if (i == 0) {
+                if (c < 0) cout << "-";
+            } else {
+                if (c < 0) cout << " - ";
+                else       cout << " + ";
+            }
+
+            int absC;
+            if (c < 0) {
+                absC = -c;   
+            } else {
+                absC = c;    
+            }
+
+            if (e == 0) {
+                cout << absC;
+            } else if (e == 1) {
+                if (absC != 1) cout << absC;
+                cout << "x";
+            } else {
+                if (absC != 1) cout << absC;
+                cout << "x^" << e;
+            }
+        }
+    }
+};
+
+int main() {
+    Polynomial p;
+    p.setTerm(2, 2);
+    p.setTerm(3, 1);
+    p.setTerm(1, 0);
+
+    Polynomial q;
+    q.setTerm(1, 2);
+    q.setTerm(-1, 1);
+    q.setTerm(4, 0);
+
+    cout << "p(x) = ";
+    p.print();
+    cout << endl;
+
+    cout << "q(x) = ";
+    q.print();
+    cout << endl;
+
+    Polynomial sum  = p + q;
+    Polynomial diff = p - q;
+    Polynomial prod = p * q;
+
+    cout << "p(x) + q(x) = ";
+    sum.print();
+    cout << endl;
+
+    cout << "p(x) - q(x) = ";
+    diff.print();
+    cout << endl;
+
+    cout << "p(x) * q(x) = ";
+    prod.print();
+    cout << endl;
+
+    // test 
+    Polynomial r;
+    r = p;       
+    cout << "r(x) after r = p: ";
+    r.print();
+    cout << endl;
+
+    r += q;
+    cout << "r(x) after r += q: ";
+    r.print();
+    cout << endl;
+
+    r -= q;
+    cout << "r(x) after r -= q (should be p again): ";
+    r.print();
+    cout << endl;
+
+    r *= q;
+    cout << "r(x) after r *= q: ";
+    r.print();
+    cout << endl;
+
+    return 0;
+}
+
